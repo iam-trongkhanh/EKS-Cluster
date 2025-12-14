@@ -32,19 +32,21 @@ EKS-Cluster/
 
 ### 🔧 Configured Information
 
-| Item                       | Value                                               |
-| -------------------------- | --------------------------------------------------- |
-| **AWS Region**             | `ap-southeast-2` (Sydney)                           |
-| **S3 Bucket**              | `khanhhocdevops-s3-bucket`                          |
-| **DynamoDB Table**         | `terraform-state-lock`                              |
-| **Organization**           | `trongkhanh`                                        |
-| **GitHub Repo**            | `https://github.com/iam-trongkhanh/EKS-Cluster.git` |
-| **Branch**                 | `main`                                              |
-| **Jenkins Credentials ID** | `aws-creds`                                         |
-| **VPC CIDR**               | `10.16.0.0/16`                                      |
-| **Availability Zones**     | `ap-southeast-2a, 2b, 2c`                           |
-| **EKS Version**            | `1.30`                                              |
-| **Environment**            | `dev`                                               |
+| Item                        | Value                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| **AWS Region**              | `ap-southeast-2` (Sydney)                                                    |
+| **S3 Bucket**               | `khanhhocdevops-s3-bucket`                                                   |
+| **DynamoDB Table**          | `terraform-state-lock`                                                       |
+| **Organization**            | `trongkhanh`                                                                 |
+| **GitHub Repo**             | `https://github.com/iam-trongkhanh/EKS-Cluster.git`                          |
+| **Branch**                  | `main`                                                                       |
+| **Jenkins Credentials ID**  | `aws-creds`                                                                  |
+| **VPC CIDR**                | `10.16.0.0/16`                                                               |
+| **Availability Zones**      | `ap-southeast-2a, 2b, 2c`                                                    |
+| **EKS Version**             | `1.30`                                                                       |
+| **Environment**             | `dev`                                                                        |
+| **On-Demand Instance Type** | `m7i-flex.large` ⭐ (Can be modified in `eks/dev.tfvars`)                    |
+| **Spot Instance Types**     | `m7i-flex.large`, `m7i-flex.xlarge`, `m7i-flex.2xlarge` ⭐ (Can be modified) |
 
 ### 📋 Important Files
 

@@ -23,8 +23,17 @@ cluster-version            = "1.30"
 cluster-name               = "eks-cluster"
 endpoint-private-access    = true
 endpoint-public-access     = false
-ondemand_instance_types    = ["t3a.medium"]
-spot_instance_types        = ["c5a.large", "c5a.xlarge", "m5a.large", "m5a.xlarge", "c5.large", "m5.large", "t3a.large", "t3a.xlarge", "t3a.medium"]
+# ============================================
+# EC2 INSTANCE TYPES - CAN BE MODIFIED
+# ============================================
+# You can change these instance types based on your needs:
+# - Free Tier: t2.micro, t3.micro, t4g.micro
+# - Small: t3.small, t3a.small (2 vCPU, 2 GB RAM)
+# - Medium: t3.medium, t3a.medium (2 vCPU, 4 GB RAM)
+# - Large: m7i-flex.large, t3.large, etc.
+# ============================================
+ondemand_instance_types    = ["m7i-flex.large"]
+spot_instance_types        = ["m7i-flex.large", "m7i-flex.xlarge", "m7i-flex.2xlarge"]
 desired_capacity_on_demand = "1"
 min_capacity_on_demand     = "1"
 max_capacity_on_demand     = "5"
