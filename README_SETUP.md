@@ -28,7 +28,7 @@ EKS-Cluster/
 
 ## 🚀 Step 1: Create S3 Bucket and DynamoDB Table
 
-**IMPORTANT**: This step must be completed BEFORE running Terraform in the `eks/` directory
+**IMPORTANT**: This step must be completed BEFORE running Terraform in the `eks/` directory. The Jenkins pipeline expects these resources to already exist.
 
 ### Method 1: Using setup-backend.tf file (Recommended)
 
