@@ -99,7 +99,7 @@ aws dynamodb create-table \
 1. Manage Jenkins → Credentials → System → Global credentials
 2. Add Credentials:
    - Kind: AWS Credentials
-   - ID: `creds-aws` (IMPORTANT: must match this exact name)
+   - ID: `aws-creds` (IMPORTANT: must match this exact name)
    - Access Key ID: [Your AWS Access Key]
    - Secret Access Key: [Your AWS Secret Key]
    - Save
@@ -193,7 +193,7 @@ terraform init
 
 ### Jenkins cannot connect to AWS
 
-- Verify AWS credentials ID in Jenkins matches `creds-aws`
+- Verify AWS credentials ID in Jenkins matches `aws-creds`
 - Verify IAM user has sufficient permissions
 
 ## 📞 Support
