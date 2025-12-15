@@ -1,0 +1,43 @@
+# ArgoCD Application for Infrastructure (Ingress)
+# Apply this to create ArgoCD Application that syncs infrastructure repo
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infrastructure
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/iam-trongkhanh/infrastructure-repo  # ⚠️ CHANGE THIS: Your infrastructure repo URL
+    targetRevision: main  # ⚠️ CHANGE THIS: Your branch
+    path: k8s/ingress/  # Path to ingress manifests
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default  # Ingress resources can be in default namespace
+    
+  syncPolicy:
+    automated:
+      prune: true  # Delete resources when removed from Git
+      selfHeal: true  # Auto-sync if cluster state differs from Git
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true  # Auto-create namespaces if needed
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      
+  # Health checks
+  healthChecks:
+    - apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      namespace: frontend
+      name: frontend-ingress
+    - apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      namespace: backend
+      name: backend-ingress
+

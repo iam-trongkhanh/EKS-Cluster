@@ -1,0 +1,171 @@
+pipeline {
+    agent any 
+    tools {
+        jdk 'jdk'
+        nodejs 'nodejs'
+    }
+    environment  {
+        SCANNER_HOME=tool 'sonar-scanner'
+        // ⚠️ CONFIGURE: Create Jenkins credentials with these IDs:
+        // - ACCOUNT_ID: AWS Account ID (String credential)
+        // - ECR_REPO1: ECR repository name for frontend (String credential)
+        // - GITHUB-APP: GitHub credentials (Username with password or SSH) - you already have this
+        // - github: GitHub Personal Access Token (Secret text) - only needed if you want to push
+        // - sonar-token: SonarQube token (Secret text)
+        AWS_DEFAULT_REGION = 'ap-southeast-2'  // ✅ Updated to your region
+        // Note: AWS_ACCOUNT_ID and AWS_ECR_REPO_NAME are now used in withCredentials blocks to avoid warnings
+    }
+    stages {
+        stage('Cleaning Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Checkout from Git') {
+            steps {
+                // ⚠️ TEMPORARY: Using their repo URL - Update to your frontend repository when ready
+                // Repo is public, so credentialsId is optional (remove if warning appears)
+                git credentialsId: 'GITHUB-APP', url: 'https://github.com/AmanPathak-DevOps/End-to-End-Kubernetes-Three-Tier-DevSecOps-Project.git'
+            }
+        }
+        stage('Sonarqube Analysis') {
+            // ⚠️ SKIPPED: SonarQube server connection timeout
+            // Uncomment when SonarQube server is accessible
+            when {
+                expression { false }  // Skip this stage for now
+            }
+            steps {
+                dir('Application-Code/frontend') {
+                    withSonarQubeEnv('sonar-server') {
+                        sh ''' $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=three-tier-frontend \
+                        -Dsonar.projectKey=three-tier-frontend '''
+                    }
+                }
+            }
+        }
+        stage('Quality Check') {
+            // ⚠️ SKIPPED: Depends on SonarQube Analysis
+            when {
+                expression { false }  // Skip this stage for now
+            }
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token' 
+                }
+            }
+        }
+        stage('OWASP Dependency-Check Scan') {
+            steps {
+                // ⚠️ CONFIGURE: Update directory path if needed
+                dir('Application-Code/frontend') {
+                    // ⚠️ CONFIGURE: Update 'DP-Check' to your Dependency-Check installation name in Jenkins
+                    dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                }
+            }
+        }
+        stage('Trivy File Scan') {
+            steps {
+                // ⚠️ CONFIGURE: Update directory path if needed
+                dir('Application-Code/frontend') {
+                    sh 'trivy fs . > trivyfs.txt'
+                }
+            }
+        }
+        stage("Docker Image Build") {
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID'),
+                        string(credentialsId: 'ECR_REPO1', variable: 'AWS_ECR_REPO_NAME')
+                    ]) {
+                        def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/"
+                        dir('Application-Code/frontend') {
+                            sh 'docker system prune -f'
+                            sh 'docker container prune -f'
+                            sh "docker build -t ${AWS_ECR_REPO_NAME} ."
+                        }
+                    }
+                }
+            }
+        }
+        stage("ECR Image Pushing") {
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID'),
+                        string(credentialsId: 'ECR_REPO1', variable: 'AWS_ECR_REPO_NAME')
+                    ]) {
+                        def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/"
+                        sh "aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}"
+                        sh "docker tag ${AWS_ECR_REPO_NAME} ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}"
+                        sh "docker push ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}"
+                    }
+                }
+            }
+        }
+        stage("TRIVY Image Scan") {
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID'),
+                        string(credentialsId: 'ECR_REPO1', variable: 'AWS_ECR_REPO_NAME')
+                    ]) {
+                        def REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/"
+                        sh "trivy image ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER} > trivyimage.txt"
+                    }
+                }
+            }
+        }
+        stage('Checkout Code') {
+            steps {
+                // ⚠️ TEMPORARY: Using their repo URL - Update to your repository when ready
+                // Repo is public, so credentialsId is optional
+                git credentialsId: 'GITHUB-APP', url: 'https://github.com/AmanPathak-DevOps/End-to-End-Kubernetes-Three-Tier-DevSecOps-Project.git'
+            }
+        }
+        stage('Update Deployment file') {
+            // ⚠️ SKIPPED: Cannot push to someone else's repository (Permission denied)
+            // Error: Permission to AmanPathak-DevOps/... denied to iam-trongkhanh
+            // Solutions:
+            // 1. Fork the repo to your account and update GIT_USER_NAME/GIT_REPO_NAME
+            // 2. Or skip this stage until you have your own repo
+            when {
+                expression { false }  // Skip this stage - no push permission
+            }
+            environment {
+                // ⚠️ TEMPORARY: Using their repo info - Update when you have your own repo
+                GIT_REPO_NAME = "End-to-End-Kubernetes-Three-Tier-DevSecOps-Project"
+                GIT_USER_NAME = "AmanPathak-DevOps"
+            }
+            steps {
+                dir('Kubernetes-Manifests-file/Frontend') {
+                    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                        script {
+                            withCredentials([
+                                string(credentialsId: 'ECR_REPO1', variable: 'AWS_ECR_REPO_NAME')
+                            ]) {
+                                sh '''
+                                    # ⚠️ TEMPORARY: Using their git config - Update when you have your own repo
+                                    git config user.email "aman07pathak@gmail.com"
+                                    git config user.name "AmanPathak-DevOps"
+                                    BUILD_NUMBER=${BUILD_NUMBER}
+                                    echo $BUILD_NUMBER
+                                    imageTag=$(grep -oP '(?<=frontend:)[^ ]+' deployment.yaml)
+                                    echo $imageTag
+                                    sed -i "s/${AWS_ECR_REPO_NAME}:${imageTag}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}/" deployment.yaml
+                                    git add deployment.yaml
+                                    git commit -m "Update deployment Image to version \${BUILD_NUMBER}"
+                                    # Using master branch (their repo uses master)
+                                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:master
+                                '''
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

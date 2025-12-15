@@ -2,3 +2,7 @@ aws-credentials
 terraform
 pipeline-stage-view
 pipeline: aws
+docker 4
+sonar
+nodejs
+owasp

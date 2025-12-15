@@ -30,3 +30,4 @@ example/
 VARIABLES_TO_CHANGE.md
 DYNAMODB_EXPLANATION.md
 *.md
+*.txt

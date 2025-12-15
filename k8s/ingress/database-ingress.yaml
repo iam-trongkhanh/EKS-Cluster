@@ -1,0 +1,33 @@
+# ⚠️ NOTE: Database thường KHÔNG nên expose ra ngoài internet
+# Chỉ tạo Ingress này nếu bạn thực sự cần expose database (không khuyến nghị)
+# Thông thường database chỉ accessible từ trong cluster (ClusterIP service)
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: database-ingress
+  namespace: database
+  annotations:
+    # AWS Load Balancer Controller annotations
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internal  # ⚠️ Use internal ALB for security
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    # SSL/TLS (REQUIRED for database)
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:region:account:certificate/cert-id
+    # alb.ingress.kubernetes.io/ssl-redirect: '443'
+    # Security: Whitelist IPs (recommended)
+    # alb.ingress.kubernetes.io/inbound-cidrs: 10.0.0.0/8,172.16.0.0/12
+spec:
+  rules:
+  - host: db.example.com  # ⚠️ CHANGE THIS: Your database domain (internal)
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: database-service  # ⚠️ Must match your database service name
+            port:
+              number: 3306  # ⚠️ MySQL port (change for PostgreSQL: 5432, MongoDB: 27017)
+
